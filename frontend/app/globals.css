@@ -169,28 +169,31 @@
 }
 .fs-enter { animation: fs-fade-in 220ms ease-out; }
 
-/* Fullscreen board sizing — the board is sized with breathing room around it. */
+/* Fullscreen board sizing — the board sits within a comfortably sized frame
+ * and is hard-capped so it never overwhelms the viewport. */
 .fs-board-area {
-  /* Mobile / tablet — reduced size to 85% of available space. */
-  --fs-w: calc((100vw - 4rem) * 0.85);
-  --fs-h: calc((100dvh - 20rem) * 0.85);
-  width: min(var(--fs-w), var(--fs-h));
-  height: min(var(--fs-w), var(--fs-h));
+  /* Mobile / tablet — leave generous breathing room and cap absolute size. */
+  --fs-w: calc((100vw - 5rem) * 0.72);
+  --fs-h: calc((100dvh - 22rem) * 0.72);
+  width: min(var(--fs-w), var(--fs-h), 540px);
+  height: min(var(--fs-w), var(--fs-h), 540px);
   aspect-ratio: 1 / 1;
 }
 @media (min-width: 1024px) {
   .fs-board-area {
-    --fs-w: calc((100vw - 26rem) * 0.82); /* right rail + paddings, slightly smaller on desktop */
-    --fs-h: calc((100dvh - 18rem) * 0.82);
+    --fs-w: calc((100vw - 28rem) * 0.7);
+    --fs-h: calc((100dvh - 20rem) * 0.7);
+    width: min(var(--fs-w), var(--fs-h), 620px);
+    height: min(var(--fs-w), var(--fs-h), 620px);
   }
 }
 
 .fs-board-track {
   width: 100%;
-  max-width: calc(min(100vw - 4rem, 100dvh - 20rem) * 0.85);
+  max-width: min(calc((100vw - 5rem) * 0.72), calc((100dvh - 22rem) * 0.72), 540px);
 }
 @media (min-width: 1024px) {
   .fs-board-track {
-    max-width: calc(min(100vw - 26rem, 100dvh - 18rem) * 0.82);
+    max-width: min(calc((100vw - 28rem) * 0.7), calc((100dvh - 20rem) * 0.7), 620px);
   }
 }
