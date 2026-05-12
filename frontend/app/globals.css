@@ -162,3 +162,36 @@
   50%      { opacity: 1; }
 }
 .thinking-pulse { animation: thinking-pulse 1.2s ease-in-out infinite; }
+
+@keyframes fs-fade-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.fs-enter { animation: fs-fade-in 220ms ease-out; }
+
+/* Fullscreen board sizing — the board is the largest square that fits the
+ * viewport minus the chrome (header, player cards) and right rail (lg+). */
+.fs-board-area {
+  /* Mobile / tablet — no right rail, generous margins. */
+  --fs-w: calc(100vw - 2rem);
+  --fs-h: calc(100dvh - 14rem);
+  width: min(var(--fs-w), var(--fs-h));
+  height: min(var(--fs-w), var(--fs-h));
+  aspect-ratio: 1 / 1;
+}
+@media (min-width: 1024px) {
+  .fs-board-area {
+    --fs-w: calc(100vw - 25rem); /* right rail + paddings */
+    --fs-h: calc(100dvh - 13rem);
+  }
+}
+
+.fs-board-track {
+  width: 100%;
+  max-width: min(calc(100vw - 2rem), calc(100dvh - 14rem));
+}
+@media (min-width: 1024px) {
+  .fs-board-track {
+    max-width: min(calc(100vw - 25rem), calc(100dvh - 13rem));
+  }
+}

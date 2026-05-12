@@ -3,7 +3,8 @@
 import { Chess, type Square } from "chess.js"
 import { useCallback, useMemo, useReducer, useRef } from "react"
 
-import { requestAiMove, type Difficulty } from "@/lib/api"
+import { analyzePosition, requestAiMove, type Difficulty } from "@/lib/api"
+import { playSound } from "@/lib/sounds"
 
 export interface MoveRecord {
   ply: number
@@ -18,6 +19,7 @@ export interface MoveRecord {
   promotion?: string
   isCheck: boolean
   isCheckmate: boolean
+  flags?: string
   aiThoughtMs?: number
   aiEvaluation?: number
   quality?: "brilliant" | "best" | "good" | "inaccuracy" | "mistake" | "blunder"
@@ -33,6 +35,11 @@ export type GameStatus =
   | "draw"
   | "resigned"
 
+export interface HintMove {
+  from: Square
+  to: Square
+}
+
 interface State {
   fen: string
   history: MoveRecord[]
@@ -43,6 +50,7 @@ interface State {
   lastMove: { from: Square; to: Square } | null
   errorMessage: string | null
   thinking: boolean
+  hint: HintMove | null
 }
 
 const START_FEN = new Chess().fen()
@@ -57,6 +65,7 @@ const INITIAL_STATE: State = {
   lastMove: null,
   errorMessage: null,
   thinking: false,
+  hint: null,
 }
 
 type Action =
@@ -68,6 +77,8 @@ type Action =
   | { type: "GOTO"; index: number | null }
   | { type: "RESIGN" }
   | { type: "ANNOTATE"; ply: number; quality: MoveRecord["quality"] }
+  | { type: "TAKEBACK"; targetFen: string; remaining: MoveRecord[] }
+  | { type: "SET_HINT"; hint: HintMove | null }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -76,7 +87,10 @@ function reducer(state: State, action: Action): State {
         ...INITIAL_STATE,
         difficulty: action.difficulty ?? state.difficulty,
         playerColor: action.playerColor ?? state.playerColor,
-        status: (action.playerColor ?? state.playerColor) === "w" ? "player-turn" : "ai-thinking",
+        status:
+          (action.playerColor ?? state.playerColor) === "w"
+            ? "player-turn"
+            : "ai-thinking",
       }
     case "APPLY_MOVE":
       return {
@@ -87,6 +101,7 @@ function reducer(state: State, action: Action): State {
         lastMove: { from: action.record.from, to: action.record.to },
         viewIndex: null,
         errorMessage: null,
+        hint: null,
       }
     case "SET_DIFFICULTY":
       return { ...state, difficulty: action.difficulty }
@@ -104,6 +119,21 @@ function reducer(state: State, action: Action): State {
       )
       return { ...state, history }
     }
+    case "TAKEBACK": {
+      const last = action.remaining[action.remaining.length - 1]
+      return {
+        ...state,
+        fen: action.targetFen,
+        history: action.remaining,
+        lastMove: last ? { from: last.from, to: last.to } : null,
+        status: "player-turn",
+        viewIndex: null,
+        errorMessage: null,
+        hint: null,
+      }
+    }
+    case "SET_HINT":
+      return { ...state, hint: action.hint }
     default:
       return state
   }
@@ -115,6 +145,21 @@ function gameStatusFromBoard(chess: Chess): GameStatus {
   if (chess.isDraw()) return "draw"
   if (chess.isCheck()) return "check"
   return "player-turn"
+}
+
+function inferEventForMove(
+  move: { captured?: string; promotion?: string; flags?: string },
+  status: GameStatus,
+) {
+  if (status === "checkmate") return "checkmate" as const
+  if (status === "stalemate" || status === "draw") return "draw" as const
+  if (status === "check") return "check" as const
+  if (move.flags && (move.flags.includes("k") || move.flags.includes("q")))
+    return "castle" as const
+  if (move.promotion) return "promotion" as const
+  if (move.captured || (move.flags && move.flags.includes("e")))
+    return "capture" as const
+  return "move" as const
 }
 
 export function useChessGame() {
@@ -145,14 +190,19 @@ export function useChessGame() {
         const move = board.move({
           from: ai.from_square as Square,
           to: ai.to_square as Square,
-          promotion: (ai.promotion ?? undefined) as "q" | "r" | "b" | "n" | undefined,
+          promotion: (ai.promotion ?? undefined) as
+            | "q"
+            | "r"
+            | "b"
+            | "n"
+            | undefined,
         })
         if (!move) throw new Error("AI returned an illegal move")
 
         const nextFen = board.fen()
         const status = gameStatusFromBoard(board)
         const record: MoveRecord = {
-          ply: chessRef.current.history().length, // not used for ordering; we re-derive below
+          ply: chessRef.current.history().length,
           san: move.san,
           uci: ai.uci,
           from: move.from,
@@ -162,6 +212,7 @@ export function useChessGame() {
           fenAfter: nextFen,
           captured: move.captured,
           promotion: move.promotion,
+          flags: move.flags,
           isCheck: board.inCheck(),
           isCheckmate: board.isCheckmate(),
           aiThoughtMs: ai.nodes_thought_ms,
@@ -174,6 +225,7 @@ export function useChessGame() {
           nextFen,
           status: status === "player-turn" ? "player-turn" : status,
         })
+        playSound(inferEventForMove(move, status))
       } catch (err) {
         const message = err instanceof Error ? err.message : "AI move failed"
         dispatch({ type: "SET_ERROR", message })
@@ -188,7 +240,11 @@ export function useChessGame() {
     async (from: Square, to: Square, promotion?: "q" | "r" | "b" | "n") => {
       if (!isLive) return false
       if (state.thinking) return false
-      if (state.status === "checkmate" || state.status === "stalemate" || state.status === "draw") {
+      if (
+        state.status === "checkmate" ||
+        state.status === "stalemate" ||
+        state.status === "draw"
+      ) {
         return false
       }
 
@@ -196,7 +252,10 @@ export function useChessGame() {
       if (board.turn() !== state.playerColor) return false
 
       const move = board.move({ from, to, promotion: promotion ?? "q" })
-      if (!move) return false
+      if (!move) {
+        playSound("illegal")
+        return false
+      }
 
       const nextFen = board.fen()
       const status = gameStatusFromBoard(board)
@@ -211,20 +270,35 @@ export function useChessGame() {
         fenAfter: nextFen,
         captured: move.captured,
         promotion: move.promotion,
+        flags: move.flags,
         isCheck: board.inCheck(),
         isCheckmate: board.isCheckmate(),
       }
       chessRef.current.load(nextFen)
       dispatch({ type: "APPLY_MOVE", record, nextFen, status })
+      playSound(inferEventForMove(move, status))
 
-      if (status === "checkmate" || status === "stalemate" || status === "draw") {
+      if (
+        status === "checkmate" ||
+        status === "stalemate" ||
+        status === "draw"
+      ) {
         return true
       }
       // Hand control to the AI.
       void triggerAiMove(nextFen, state.difficulty)
       return true
     },
-    [isLive, state.fen, state.thinking, state.status, state.playerColor, state.history.length, state.difficulty, triggerAiMove],
+    [
+      isLive,
+      state.fen,
+      state.thinking,
+      state.status,
+      state.playerColor,
+      state.history.length,
+      state.difficulty,
+      triggerAiMove,
+    ],
   )
 
   const legalMovesFrom = useCallback(
@@ -246,6 +320,7 @@ export function useChessGame() {
     (opts?: { difficulty?: Difficulty; playerColor?: "w" | "b" }) => {
       chessRef.current = new Chess()
       dispatch({ type: "RESET", ...opts })
+      playSound("start")
       if (opts?.playerColor === "b") {
         // AI plays white first.
         void triggerAiMove(START_FEN, opts.difficulty ?? state.difficulty)
@@ -262,7 +337,10 @@ export function useChessGame() {
     dispatch({ type: "GOTO", index })
   }, [])
 
-  const resign = useCallback(() => dispatch({ type: "RESIGN" }), [])
+  const resign = useCallback(() => {
+    playSound("draw")
+    dispatch({ type: "RESIGN" })
+  }, [])
 
   const annotate = useCallback(
     (ply: number, quality: MoveRecord["quality"]) => {
@@ -270,6 +348,55 @@ export function useChessGame() {
     },
     [],
   )
+
+  /**
+   * Take back the most recent full move pair (player + AI). If the player
+   * is on move, takes back just the prior AI reply too. Does nothing if
+   * fewer than 1 move exists.
+   */
+  const takeBack = useCallback(() => {
+    if (state.thinking) return
+    if (state.history.length === 0) return
+
+    // Decide how many plies to remove so that it's the player's turn after.
+    let removeCount = 0
+    if (sideToMove === state.playerColor) {
+      // Player to move — last ply was AI, the one before was player.
+      removeCount = Math.min(2, state.history.length)
+    } else {
+      // AI to move (rare here) — just remove the player's last ply.
+      removeCount = 1
+    }
+
+    const remaining = state.history.slice(0, state.history.length - removeCount)
+    const targetFen =
+      remaining.length > 0
+        ? remaining[remaining.length - 1].fenAfter
+        : START_FEN
+    chessRef.current.load(targetFen)
+    dispatch({ type: "TAKEBACK", targetFen, remaining })
+    playSound("click")
+  }, [state.history, state.thinking, sideToMove, state.playerColor])
+
+  const requestHint = useCallback(async () => {
+    if (!isLive) return
+    if (state.thinking) return
+    if (sideToMove !== state.playerColor) return
+    try {
+      const res = await analyzePosition(state.fen, 3)
+      if (!res.best_move_uci) return
+      const from = res.best_move_uci.slice(0, 2) as Square
+      const to = res.best_move_uci.slice(2, 4) as Square
+      dispatch({ type: "SET_HINT", hint: { from, to } })
+      playSound("click")
+    } catch {
+      // ignore
+    }
+  }, [isLive, state.thinking, sideToMove, state.playerColor, state.fen])
+
+  const clearHint = useCallback(() => {
+    dispatch({ type: "SET_HINT", hint: null })
+  }, [])
 
   return {
     state,
@@ -283,5 +410,8 @@ export function useChessGame() {
     goto,
     resign,
     annotate,
+    takeBack,
+    requestHint,
+    clearHint,
   }
 }

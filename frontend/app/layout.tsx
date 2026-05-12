@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
+
+import { SettingsProvider } from "@/hooks/use-settings"
+
 import "./globals.css"
 
 const inter = Inter({
@@ -30,7 +33,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} bg-background`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <SettingsProvider>{children}</SettingsProvider>
+      </body>
     </html>
   )
 }
