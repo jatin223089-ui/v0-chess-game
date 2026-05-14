@@ -92,17 +92,19 @@ function reducer(state: State, action: Action): State {
             ? "player-turn"
             : "ai-thinking",
       }
-    case "APPLY_MOVE":
+    case "APPLY_MOVE": {
+      const record = { ...action.record, ply: state.history.length + 1 }
       return {
         ...state,
         fen: action.nextFen,
-        history: [...state.history, action.record],
+        history: [...state.history, record],
         status: action.status,
-        lastMove: { from: action.record.from, to: action.record.to },
+        lastMove: { from: record.from, to: record.to },
         viewIndex: null,
         errorMessage: null,
         hint: null,
       }
+    }
     case "SET_DIFFICULTY":
       return { ...state, difficulty: action.difficulty }
     case "SET_THINKING":
@@ -112,7 +114,7 @@ function reducer(state: State, action: Action): State {
     case "GOTO":
       return { ...state, viewIndex: action.index }
     case "RESIGN":
-      return { ...state, status: "resigned" }
+      return { ...state, status: "resigned", thinking: false, hint: null }
     case "ANNOTATE": {
       const history = state.history.map((m) =>
         m.ply === action.ply ? { ...m, quality: action.quality } : m,
@@ -166,6 +168,8 @@ export function useChessGame() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   // Keep a single mutable Chess instance to avoid re-parsing FEN every move.
   const chessRef = useRef<Chess>(new Chess())
+  // Bump this when abandoning a game so late AI responses cannot mutate it.
+  const gameIdRef = useRef(0)
 
   // The board the user is currently looking at — either live or a past ply.
   const viewedFen = useMemo(() => {
@@ -182,10 +186,12 @@ export function useChessGame() {
   }, [viewedFen])
 
   const triggerAiMove = useCallback(
-    async (currentFen: string, difficulty: Difficulty) => {
+    async (currentFen: string, difficulty: Difficulty, gameId: number) => {
       dispatch({ type: "SET_THINKING", thinking: true })
       try {
         const ai = await requestAiMove(currentFen, difficulty)
+        if (gameIdRef.current !== gameId) return
+
         const board = new Chess(currentFen)
         const move = board.move({
           from: ai.from_square as Square,
@@ -221,19 +227,22 @@ export function useChessGame() {
         chessRef.current.load(nextFen)
         dispatch({
           type: "APPLY_MOVE",
-          record: { ...record, ply: state.history.length + 1 },
+          record,
           nextFen,
           status: status === "player-turn" ? "player-turn" : status,
         })
         playSound(inferEventForMove(move, status))
       } catch (err) {
+        if (gameIdRef.current !== gameId) return
         const message = err instanceof Error ? err.message : "AI move failed"
         dispatch({ type: "SET_ERROR", message })
       } finally {
-        dispatch({ type: "SET_THINKING", thinking: false })
+        if (gameIdRef.current === gameId) {
+          dispatch({ type: "SET_THINKING", thinking: false })
+        }
       }
     },
-    [state.history.length],
+    [],
   )
 
   const makePlayerMove = useCallback(
@@ -286,7 +295,7 @@ export function useChessGame() {
         return true
       }
       // Hand control to the AI.
-      void triggerAiMove(nextFen, state.difficulty)
+      void triggerAiMove(nextFen, state.difficulty, gameIdRef.current)
       return true
     },
     [
@@ -318,12 +327,14 @@ export function useChessGame() {
 
   const newGame = useCallback(
     (opts?: { difficulty?: Difficulty; playerColor?: "w" | "b" }) => {
+      gameIdRef.current += 1
+      const gameId = gameIdRef.current
       chessRef.current = new Chess()
       dispatch({ type: "RESET", ...opts })
       playSound("start")
       if (opts?.playerColor === "b") {
         // AI plays white first.
-        void triggerAiMove(START_FEN, opts.difficulty ?? state.difficulty)
+        void triggerAiMove(START_FEN, opts.difficulty ?? state.difficulty, gameId)
       }
     },
     [state.difficulty, triggerAiMove],
@@ -338,6 +349,7 @@ export function useChessGame() {
   }, [])
 
   const resign = useCallback(() => {
+    gameIdRef.current += 1
     playSound("draw")
     dispatch({ type: "RESIGN" })
   }, [])
