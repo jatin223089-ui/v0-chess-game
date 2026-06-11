@@ -1,0 +1,9 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Chess AI backend with Minimax"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi[standard]>=0.128.1",
+  "python-chess>=1.999",
+]
