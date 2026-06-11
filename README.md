@@ -269,11 +269,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is open source and available under the MIT License.
 
-## 🔗 Built with v0
-
-This repository is linked to a [v0](https://v0.app) project.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_2bwqWSgwSbcw3sWwOLwDnwaDSZP5)
 
 <a href="https://v0.app/chat/api/kiro/clone/jatin223089-ui/v0-chess-game" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
 
