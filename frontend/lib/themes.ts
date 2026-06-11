@@ -10,6 +10,11 @@ export interface BoardTheme {
   dark: string
   surface: string
   coords: string
+  // Visual indicators
+  legalDot: string       // Legal move indicator
+  moveHighlight: string  // Last move highlight
+  checkGlow: string      // King in check
+  boardInk: string       // Arrows and selection
 }
 
 export const BOARD_THEMES: Record<string, BoardTheme> = {
@@ -21,6 +26,10 @@ export const BOARD_THEMES: Record<string, BoardTheme> = {
     dark: "#b58863",
     surface: "#1a1410",
     coords: "#b58863",
+    legalDot: "rgba(32, 32, 32, 0.35)",
+    moveHighlight: "rgba(155, 199, 0, 0.41)",
+    checkGlow: "#ff6b6b",
+    boardInk: "rgba(255, 170, 0, 0.85)",
   },
   modern: {
     id: "modern",
@@ -30,6 +39,10 @@ export const BOARD_THEMES: Record<string, BoardTheme> = {
     dark: "#6b7280",
     surface: "#111827",
     coords: "#6b7280",
+    legalDot: "rgba(32, 32, 32, 0.35)",
+    moveHighlight: "rgba(74, 222, 128, 0.35)",
+    checkGlow: "#ef4444",
+    boardInk: "rgba(59, 130, 246, 0.85)",
   },
   wood: {
     id: "wood",
@@ -39,6 +52,10 @@ export const BOARD_THEMES: Record<string, BoardTheme> = {
     dark: "#8b5a3c",
     surface: "#1c1410",
     coords: "#8b5a3c",
+    legalDot: "rgba(32, 32, 32, 0.35)",
+    moveHighlight: "rgba(155, 199, 0, 0.41)",
+    checkGlow: "#ff6b6b",
+    boardInk: "rgba(255, 170, 0, 0.85)",
   },
   ocean: {
     id: "ocean",
@@ -48,6 +65,10 @@ export const BOARD_THEMES: Record<string, BoardTheme> = {
     dark: "#14b8a6",
     surface: "#042f2e",
     coords: "#14b8a6",
+    legalDot: "rgba(20, 20, 20, 0.4)",
+    moveHighlight: "rgba(52, 211, 153, 0.35)",
+    checkGlow: "#f87171",
+    boardInk: "rgba(245, 158, 11, 0.9)",
   },
   forest: {
     id: "forest",
@@ -57,6 +78,10 @@ export const BOARD_THEMES: Record<string, BoardTheme> = {
     dark: "#059669",
     surface: "#064e3b",
     coords: "#059669",
+    legalDot: "rgba(20, 20, 20, 0.4)",
+    moveHighlight: "rgba(134, 239, 172, 0.35)",
+    checkGlow: "#f87171",
+    boardInk: "rgba(251, 191, 36, 0.9)",
   },
   midnight: {
     id: "midnight",
@@ -66,6 +91,10 @@ export const BOARD_THEMES: Record<string, BoardTheme> = {
     dark: "#4f46e5",
     surface: "#1e1b4b",
     coords: "#4f46e5",
+    legalDot: "rgba(20, 20, 20, 0.4)",
+    moveHighlight: "rgba(147, 197, 253, 0.35)",
+    checkGlow: "#fca5a5",
+    boardInk: "rgba(250, 204, 21, 0.9)",
   },
 }
 
@@ -79,5 +108,9 @@ export function themeCssVars(theme: BoardTheme): React.CSSProperties {
     "--board-dark": theme.dark,
     "--board-surface": theme.surface,
     "--board-coords": theme.coords,
+    "--legal-dot": theme.legalDot,
+    "--move-highlight": theme.moveHighlight,
+    "--check-glow": theme.checkGlow,
+    "--board-ink": theme.boardInk,
   } as React.CSSProperties
 }

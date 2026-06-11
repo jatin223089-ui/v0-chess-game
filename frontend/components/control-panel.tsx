@@ -75,6 +75,19 @@ export function ControlPanel({
   const meta = DIFFICULTY_META[difficulty]
   return (
     <div className="flex flex-col gap-5 p-4">
+      {/* Beginner's Guide */}
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">
+          How to Play
+        </h4>
+        <ul className="space-y-1 text-xs text-muted-foreground">
+          <li>• Click a piece to see where it can move</li>
+          <li>• Green dots show legal moves</li>
+          <li>• Click a highlighted square to move</li>
+          <li>• Use hints (]) when stuck</li>
+        </ul>
+      </div>
+
       <div>
         <div className="mb-2 flex items-baseline justify-between">
           <label

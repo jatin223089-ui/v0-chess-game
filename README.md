@@ -39,6 +39,8 @@ A full-stack chess game with AI opponent powered by Minimax algorithm with alpha
 - Filter by category (Matches, Tutorials, Highlights, Analysis)
 - Direct links to popular chess YouTubers
 - YouTube integration for seamless viewing
+- Video thumbnails and metadata
+- Quick search links to YouTube for specific topics
 
 ## 🏗️ Architecture
 
