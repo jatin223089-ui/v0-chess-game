@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
 import type { GameStatus } from "@/hooks/use-chess-game"
 
 interface GameOverDialogProps {
@@ -53,64 +54,61 @@ export function GameOverDialog({
     if (status === "checkmate") {
       const playerWon = sideToMove !== playerColor
       return {
-        title: playerWon ? "🎉 Victory!" : "Game Over",
+        title: playerWon ? "Victory!" : "Game Over",
+        emoji: playerWon ? "🎉" : "♔",
         icon: playerWon ? Trophy : Crown,
-        iconColor: playerWon ? "text-yellow-500" : "text-red-500",
         description: playerWon
-          ? "Checkmate! You won the game!"
+          ? "Checkmate! You won the game."
           : "Checkmate! You lost the game.",
         message: playerWon
-          ? "Congratulations! You delivered checkmate to your opponent."
-          : "The AI delivered checkmate. Better luck next time!",
-        bgColor: playerWon ? "bg-yellow-500/10" : "bg-red-500/10",
-        borderColor: playerWon ? "border-yellow-500/30" : "border-red-500/30",
+          ? "Congratulations! You successfully delivered checkmate."
+          : "The AI delivered checkmate. Don't give up — try again!",
+        explanation: playerWon
+          ? "Your opponent's king is under attack with no way to escape. Well played!"
+          : "Your king was under attack with no escape. Try a lower difficulty or use hints to improve your game.",
       }
     }
 
     if (status === "stalemate") {
       return {
-        title: "Draw by Stalemate",
+        title: "Stalemate — Draw",
+        emoji: "🤝",
         icon: Handshake,
-        iconColor: "text-blue-500",
-        description: "The game is a draw!",
+        description: "The game is a draw.",
         message: "The player to move has no legal moves but is not in check.",
-        bgColor: "bg-blue-500/10",
-        borderColor: "border-blue-500/30",
+        explanation: "This is called a stalemate. Neither player wins — the game ends in a draw.",
       }
     }
 
     if (status === "draw") {
       return {
         title: "Draw",
+        emoji: "🤝",
         icon: Handshake,
-        iconColor: "text-blue-500",
-        description: "The game is a draw!",
-        message: "The game ended in a draw (50-move rule, repetition, or insufficient material).",
-        bgColor: "bg-blue-500/10",
-        borderColor: "border-blue-500/30",
+        description: "The game is a draw.",
+        message: "The game ended in a draw by agreement or automatic rule.",
+        explanation: "Draws can occur from the 50-move rule, threefold repetition, or insufficient material to checkmate.",
       }
     }
 
     if (status === "resigned") {
       return {
         title: "Game Resigned",
+        emoji: "🏳️",
         icon: Flag,
-        iconColor: "text-gray-500",
         description: "You resigned the game.",
         message: "You chose to resign. The game is over.",
-        bgColor: "bg-gray-500/10",
-        borderColor: "border-gray-500/30",
+        explanation: "Resignation is a valid way to end a game when the position is lost.",
       }
     }
 
     return {
       title: "Game Over",
+      emoji: "♟️",
       icon: Flag,
-      iconColor: "text-gray-500",
       description: "The game has ended.",
       message: "The game is over.",
-      bgColor: "bg-gray-500/10",
-      borderColor: "border-gray-500/30",
+      explanation: "",
     }
   }
 
@@ -121,78 +119,69 @@ export function GameOverDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-center">
-            <div
-              className={`flex h-20 w-20 items-center justify-center rounded-full ${info.bgColor} border-2 ${info.borderColor}`}
-            >
-              <Icon className={`h-10 w-10 ${info.iconColor}`} />
+          <div className="flex items-center justify-center pb-2">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+              <span className="text-4xl">{info.emoji}</span>
             </div>
           </div>
-          <DialogTitle className="text-center text-2xl pt-4">
+          <DialogTitle className="text-center font-serif text-2xl pt-2">
             {info.title}
           </DialogTitle>
-          <DialogDescription className="text-center text-base">
+          <DialogDescription className="text-center text-base pt-1">
             {info.description}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <div
-            className={`rounded-lg border ${info.borderColor} ${info.bgColor} p-4 text-center`}
-          >
-            <p className="text-sm text-foreground">{info.message}</p>
+        <div className="space-y-4 py-2">
+          <div className="rounded-lg border border-border bg-muted/40 p-4 text-center">
+            <p className="text-sm text-foreground leading-relaxed">{info.message}</p>
           </div>
 
-          {status === "checkmate" && sideToMove !== playerColor && (
-            <div className="mt-4 space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          {info.explanation && (
+            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-                What is Checkmate?
+                {status === "checkmate" && sideToMove !== playerColor
+                  ? "What is Checkmate?"
+                  : status === "checkmate"
+                  ? "Learn & Improve"
+                  : "About This Result"}
               </p>
-              <p className="text-xs text-muted-foreground">
-                Checkmate means the king is under attack (in check) and has no way to escape.
-                The game is over and cannot continue.
-              </p>
-            </div>
-          )}
-
-          {status === "checkmate" && sideToMove === playerColor && (
-            <div className="mt-4 space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-destructive">
-                What is Checkmate?
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Your king was under attack with no way to escape. The game is over.
-                Try a lower difficulty or use hints to improve!
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {info.explanation}
               </p>
             </div>
           )}
         </div>
+
+        <Separator />
 
         <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
           <Button onClick={onNewGame} className="w-full" size="lg">
             <RotateCcw className="h-4 w-4" />
             Start New Game
           </Button>
-          {onAnalyze && (
+          <div className="flex w-full gap-2">
+            {onAnalyze && (
+              <Button
+                onClick={() => {
+                  setOpen(false)
+                  onAnalyze()
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                <TrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">Analyze</span>
+              </Button>
+            )}
             <Button
-              onClick={() => {
-                setOpen(false)
-                onAnalyze()
-              }}
-              variant="outline"
-              className="w-full"
+              onClick={() => setOpen(false)}
+              variant="ghost"
+              className="flex-1"
             >
-              <TrendingUp className="h-4 w-4" />
-              Analyze Game
+              Close
             </Button>
-          )}
-          <Button
-            onClick={() => setOpen(false)}
-            variant="ghost"
-            className="w-full"
-          >
-            Close
-          </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
