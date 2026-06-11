@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react"
 import { AnalysisPanel } from "@/components/analysis-panel"
 import { ChessBoard } from "@/components/chess-board"
 import { ControlPanel } from "@/components/control-panel"
+import { FocusModePrompt } from "@/components/focus-mode-prompt"
 import { FullscreenGame } from "@/components/fullscreen-game"
 import { GameStatusBanner } from "@/components/game-status-banner"
 import { MoveHistory } from "@/components/move-history"
@@ -257,6 +258,9 @@ export default function Page() {
           onFullscreen={() => setFullscreen(true)}
           onFlip={() => setBoardFlipped((v) => !v)}
         />
+
+        {/* Focus Mode Prompt */}
+        <FocusModePrompt onEnterFocusMode={() => setFullscreen(true)} />
 
         <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
           <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,320px)] md:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-8">
