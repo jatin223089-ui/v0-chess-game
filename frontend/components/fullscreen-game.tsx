@@ -17,6 +17,7 @@ import {
 import { useEffect, useMemo } from "react"
 
 import { ChessBoard } from "@/components/chess-board"
+import { GameOverDialog } from "@/components/game-over-dialog"
 import { MoveHistory } from "@/components/move-history"
 import { PlayerCard } from "@/components/player-card"
 import { SettingsDialog } from "@/components/settings-dialog"
@@ -189,6 +190,14 @@ export function FullscreenGame(props: FullscreenGameProps) {
           "radial-gradient(ellipse at top, var(--board-surface) 0%, #050505 100%)",
       }}
     >
+      {/* Game Over Dialog */}
+      <GameOverDialog
+        status={status}
+        playerColor={playerColor}
+        sideToMove={sideToMove}
+        onNewGame={onNewGame}
+      />
+
       {/* Top bar */}
       <header className="flex items-center justify-between border-b border-border/60 bg-black/30 px-4 py-2.5 backdrop-blur">
         <div className="flex items-center gap-2">

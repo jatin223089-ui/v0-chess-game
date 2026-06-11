@@ -20,6 +20,7 @@ import { ChessBoard } from "@/components/chess-board"
 import { ControlPanel } from "@/components/control-panel"
 import { FocusModePrompt } from "@/components/focus-mode-prompt"
 import { FullscreenGame } from "@/components/fullscreen-game"
+import { GameOverDialog } from "@/components/game-over-dialog"
 import { GameStatusBanner } from "@/components/game-status-banner"
 import { MoveHistory } from "@/components/move-history"
 import { PlayerCard } from "@/components/player-card"
@@ -261,6 +262,15 @@ export default function Page() {
 
         {/* Focus Mode Prompt */}
         <FocusModePrompt onEnterFocusMode={() => setFullscreen(true)} />
+
+        {/* Game Over Dialog */}
+        <GameOverDialog
+          status={state.status}
+          playerColor={state.playerColor}
+          sideToMove={sideToMove}
+          onNewGame={handleNewGame}
+          onAnalyze={handleAnalyze}
+        />
 
         <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
           <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,320px)] md:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-8">
